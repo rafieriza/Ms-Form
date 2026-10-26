@@ -4,34 +4,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const navProjects = document.getElementById('navProjects');
   const navAlarms = document.getElementById('navAlarms');
 
-  const tabHome = document.getElementById('tabHome');
-  const tabProjects = document.getElementById('tabProjects');
-  const tabAlarms = document.getElementById('tabAlarms');
+  const homeView = document.getElementById('homeView');
+  const projectsView = document.getElementById('projectsView');
+  const alarmsView = document.getElementById('alarmsView');
 
-  function switchTab(activeTab, activeContent) {
+  // Sub-view dalam tab Projects
+  const projectListView = document.getElementById('projectListView');
+  const projectEditorView = document.getElementById('projectEditorView');
+  const newProjectBtn = document.getElementById('newProjectBtn');
+  const backToProjectsBtn = document.getElementById('backToProjectsBtn');
+
+  function switchTab(activeNav, activeSection) {
     [navHome, navProjects, navAlarms].forEach(n => n.classList.remove('active'));
-    [tabHome, tabProjects, tabAlarms].forEach(c => c.classList.remove('active'));
+    [homeView, projectsView, alarmsView].forEach(v => v.style.display = 'none');
 
-    activeTab.classList.add('active');
-    activeContent.classList.add('active');
+    activeNav.classList.add('active');
+    activeSection.style.display = 'block';
 
-    if (activeContent === tabHome) loadProjectDropdown();
-    if (activeContent === tabProjects) loadProjectList();
-    if (activeContent === tabAlarms) loadAlarmsList();
+    if (activeSection === homeView) loadProjectDropdown();
+    if (activeSection === projectsView) {
+      projectListView.style.display = 'block';
+      projectEditorView.style.display = 'none';
+      loadProjectList();
+    }
+    if (activeSection === alarmsView) loadAlarmsList();
   }
 
-  navHome.addEventListener('click', () => switchTab(navHome, tabHome));
-  navProjects.addEventListener('click', () => switchTab(navProjects, tabProjects));
-  navAlarms.addEventListener('click', () => switchTab(navAlarms, tabAlarms));
+  navHome.addEventListener('click', () => switchTab(navHome, homeView));
+  navProjects.addEventListener('click', () => switchTab(navProjects, projectsView));
+  navAlarms.addEventListener('click', () => switchTab(navAlarms, alarmsView));
+
+  // Tombol navigasi di dalam tab Projects
+  newProjectBtn.addEventListener('click', () => {
+    projectListView.style.display = 'none';
+    projectEditorView.style.display = 'block';
+    document.getElementById('editProjectName').value = "Project Baru " + Date.now().toString().slice(-4);
+    rulesContainer.innerHTML = '';
+    addRuleRow(); // Tambah satu baris rule default
+  });
+
+  backToProjectsBtn.addEventListener('click', () => {
+    projectEditorView.style.display = 'none';
+    projectListView.style.display = 'block';
+    loadProjectList();
+  });
 
   // --- HOME / JADWAL FORM ---
-  const taskForm = document.getElementById('taskForm');
+  const taskForm = document.getElementById('homeView'); // Menggunakan container form di homeView
   const projectSelect = document.getElementById('selectedProject');
+  const submitBtn = document.getElementById('submitBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
   function loadProjectDropdown() {
     chrome.storage.local.get(['projects'], (data) => {
       const projects = data.projects || {};
-      projectSelect.innerHTML = '<option value="">-- Tanpa Project (Manual) --</option>';
+      projectSelect.innerHTML = '<option value="">-- Tanpa Autofill (Manual) --</option>';
       
       Object.keys(projects).forEach(projName => {
         const opt = document.createElement('option');
@@ -42,9 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  taskForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const taskName = document.getElementById('taskName').value.trim();
+  submitBtn.addEventListener('click', () => {
+    const taskName = document.getElementById('formName').value.trim();
     const formUrl = document.getElementById('formUrl').value.trim();
     const selectedProject = projectSelect.value;
     const startTime = document.getElementById('startTime').value;
@@ -65,57 +91,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }, (response) => {
       if (response && response.status === "success") {
         alert(response.message);
-        taskForm.reset();
-        switchTab(navAlarms, tabAlarms);
+        document.getElementById('formName').value = '';
+        document.getElementById('formUrl').value = '';
+        document.getElementById('startTime').value = '';
+        document.getElementById('endTime').value = '';
+        switchTab(navAlarms, alarmsView);
       } else {
         alert(response?.message || "Gagal menyetel alarm.");
       }
     });
   });
 
-  // --- PROJECTS MANAGEMENT ---
+  resetBtn.addEventListener('click', () => {
+    document.getElementById('formName').value = '';
+    document.getElementById('formUrl').value = '';
+    document.getElementById('startTime').value = '';
+    document.getElementById('endTime').value = '';
+    projectSelect.value = '';
+  });
+
+  // --- PROJECTS MANAGEMENT & DYNAMIC RULES ---
   const saveProjectBtn = document.getElementById('saveProjectBtn');
   const addRuleBtn = document.getElementById('addRuleBtn');
   const rulesContainer = document.getElementById('rulesContainer');
-  const existingProjectsList = document.getElementById('existingProjectsList');
-  const newProjectNameInput = document.getElementById('newProjectName');
+  const projectListContainer = document.getElementById('projectList');
+  const editProjectNameInput = document.getElementById('editProjectName');
 
   addRuleBtn.addEventListener('click', () => addRuleRow());
 
-  // Fungsi dinamis untuk membuat baris rule (mendukung input date picker jika tipe Date dipilih)
   function addRuleRow(type = "Text", question = "", value = "") {
     const row = document.createElement('div');
     row.className = 'rule-row';
-    row.style.cssText = "display: flex; gap: 8px; margin-bottom: 8px; align-items: center;";
 
-    // Menentukan jenis elemen input value berdasarkan tipe rule
     const getValueInputHTML = (currentType, val) => {
       if (currentType === 'Date') {
-        return `<input type="date" class="rule-value" value="${val}" style="flex: 2; padding: 6px;">`;
+        return `<input type="date" class="rule-value" value="${val}">`;
       }
-      return `<input type="text" class="rule-value" placeholder="Value or <now>" value="${val}" style="flex: 2; padding: 6px;">`;
+      return `<input type="text" class="rule-value" placeholder="Value or <now>" value="${val}">`;
     };
 
     row.innerHTML = `
-      <select class="rule-type" style="flex: 1; padding: 6px;">
+      <select class="rule-type">
         <option value="Text" ${type === 'Text' ? 'selected' : ''}>Text</option>
         <option value="Choice" ${type === 'Choice' ? 'selected' : ''}>Choice</option>
         <option value="Date" ${type === 'Date' ? 'selected' : ''}>Date</option>
       </select>
-      <input type="text" class="rule-question" placeholder="Title Question" value="${question}" style="flex: 2; padding: 6px;">
-      <div class="value-container" style="flex: 2; display: flex;">
+      <input type="text" class="rule-question" placeholder="Title Question" value="${question}">
+      <div class="value-container">
         ${getValueInputHTML(type, value)}
       </div>
-      <button type="button" class="delete-rule-btn" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">-</button>
+      <button type="button" class="delete-rule-btn" style="background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;">-</button>
     `;
 
-    // Event listener untuk mengubah input value secara dinamis saat dropdown tipe rule diubah
     const typeSelect = row.querySelector('.rule-type');
     const valueContainer = row.querySelector('.value-container');
 
     typeSelect.addEventListener('change', (e) => {
       const selectedType = e.target.value;
-      const currentVal = row.querySelector('.rule-value').value;
+      const currentVal = row.querySelector('.rule-value') ? row.querySelector('.rule-value').value : '';
       valueContainer.innerHTML = getValueInputHTML(selectedType, selectedType === 'Date' ? '' : currentVal);
     });
 
@@ -124,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   saveProjectBtn.addEventListener('click', () => {
-    const projectName = newProjectNameInput.value.trim();
+    const projectName = editProjectNameInput.value.trim();
     if (!projectName) {
       alert("Nama project wajib diisi!");
       return;
@@ -134,10 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const rules = [];
 
     rows.forEach(r => {
+      const valInput = r.querySelector('.rule-value');
       rules.push({
         type: r.querySelector('.rule-type').value,
         question: r.querySelector('.rule-question').value.trim(),
-        value: r.querySelector('.rule-value').value.trim()
+        value: valInput ? valInput.value.trim() : ""
       });
     });
 
@@ -147,8 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       chrome.storage.local.set({ projects }, () => {
         alert(`Project "${projectName}" berhasil disimpan!`);
-        newProjectNameInput.value = '';
-        rulesContainer.innerHTML = '';
+        projectEditorView.style.display = 'none';
+        projectListView.style.display = 'block';
         loadProjectList();
       });
     });
@@ -157,42 +191,60 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadProjectList() {
     chrome.storage.local.get(['projects'], (data) => {
       const projects = data.projects || {};
-      existingProjectsList.innerHTML = '';
+      projectListContainer.innerHTML = '';
 
       if (Object.keys(projects).length === 0) {
-        existingProjectsList.innerHTML = '<p style="color: #666; font-size: 13px;">Belum ada project tersimpan.</p>';
+        projectListContainer.innerHTML = '<p class="no-data">Belum ada project autofill.</p>';
         return;
       }
 
       Object.keys(projects).forEach(projName => {
-        const div = document.createElement('div');
-        div.style.cssText = "background: #f9f9f9; border: 1px solid #ddd; padding: 8px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;";
+        const card = document.createElement('div');
+        card.className = 'card-item';
         
-        div.innerHTML = `
-          <div>
-            <strong>${projName}</strong> (${projects[projName].rules.length} rules)
+        card.innerHTML = `
+          <div class="card-info">
+            <p class="card-title">${projName}</p>
+            <p class="card-subtitle">${projects[projName].rules.length} aturan isian</p>
           </div>
-          <button class="del-proj" data-name="${projName}" style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Hapus</button>
+          <div>
+            <button class="edit-btn" data-name="${projName}">Edit</button>
+            <button class="delete-btn" data-name="${projName}" style="font-size: 14px;">🗑️</button>
+          </div>
         `;
 
-        div.querySelector('.del-proj').addEventListener('click', () => {
+        card.querySelector('.edit-btn').addEventListener('click', () => {
+          editProjectNameInput.value = projName;
+          rulesContainer.innerHTML = '';
+          projectListView.style.display = 'none';
+          projectEditorView.style.display = 'block';
+
+          const rules = projects[projName].rules || [];
+          if (rules.length > 0) {
+            rules.forEach(rule => addRuleRow(rule.type, rule.question, rule.value));
+          } else {
+            addRuleRow();
+          }
+        });
+
+        card.querySelector('.delete-btn').addEventListener('click', () => {
           if (confirm(`Hapus project "${projName}"?`)) {
             delete projects[projName];
             chrome.storage.local.set({ projects }, () => loadProjectList());
           }
         });
 
-        existingProjectsList.appendChild(div);
+        projectListContainer.appendChild(card);
       });
     });
   }
 
   // --- ALARMS LIST ---
-  const alarmsListContainer = document.getElementById('alarmsList');
+  const alarmListContainer = document.getElementById('alarmList');
 
   function loadAlarmsList() {
     chrome.storage.local.get(null, (items) => {
-      alarmsListContainer.innerHTML = '';
+      alarmListContainer.innerHTML = '';
       let hasAlarm = false;
 
       Object.keys(items).forEach(key => {
@@ -202,43 +254,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (task && task.endTime) {
           hasAlarm = true;
           const card = document.createElement('div');
-          card.className = 'alarm-card';
-          card.style.cssText = "background: #fff; border: 1px solid #ddd; border-left: 4px solid #0078d4; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;";
+          card.className = 'card-item';
 
           const formatDateTime = (ms) => {
             if (!ms) return '-';
             const d = new Date(ms);
-            const dateStr = d.toLocaleDateString('id-ID');
-            const timeStr = d.toTimeString().split(' ')[0];
-            return `${dateStr}, ${timeStr}`;
+            return `${d.toLocaleDateString('id-ID')}, ${d.toTimeString().split(' ')[0]}`;
           };
 
-          const startFormatted = formatDateTime(task.startTime);
-          const endFormatted = formatDateTime(task.endTime);
-
           card.innerHTML = `
-            <div>
-              <div style="font-weight: bold; color: #333; font-size: 14px;">⏰ ${task.name}</div>
-              <div style="font-size: 12px; color: #555; margin-top: 3px;"><strong>Mulai:</strong> ${startFormatted}</div>
-              <div style="font-size: 12px; color: #d9534f; margin-top: 1px;"><strong>Berakhir:</strong> ${endFormatted}</div>
-              <div style="font-size: 12px; color: #0078d4; margin-top: 3px;">Project: ${task.selectedProject || 'Manual'}</div>
+            <div class="card-info" style="max-width: 210px;">
+              <p class="card-title">⏰ ${task.name}</p>
+              <p class="card-subtitle"><strong>Mulai:</strong> ${formatDateTime(task.startTime)}</p>
+              <p class="card-subtitle" style="color: #d9534f;"><strong>Berakhir:</strong> ${formatDateTime(task.endTime)}</p>
+              <p class="card-subtitle" style="color: #0078d4;">Project: ${task.selectedProject || 'Manual'}</p>
             </div>
-            <button class="delete-task-btn" data-name="${task.name}" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">🗑️</button>
+            <button class="delete-btn" data-name="${task.name}">🗑️</button>
           `;
 
-          card.querySelector('.delete-task-btn').addEventListener('click', () => {
-            const taskName = task.name;
-            chrome.runtime.sendMessage({ action: "cleanupTask", taskName }, () => {
+          card.querySelector('.delete-btn').addEventListener('click', () => {
+            chrome.runtime.sendMessage({ action: "cleanupTask", taskName: task.name }, () => {
               loadAlarmsList();
             });
           });
 
-          alarmsListContainer.appendChild(card);
+          alarmListContainer.appendChild(card);
         }
       });
 
       if (!hasAlarm) {
-        alarmsListContainer.innerHTML = '<p style="color: #666; font-size: 13px; text-align: center;">Tidak ada jadwal alarm aktif.</p>';
+        alarmListContainer.innerHTML = '<p class="no-data">Belum ada alarm tersimpan.</p>';
       }
     });
   }
