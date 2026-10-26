@@ -25,12 +25,13 @@ function initAutoFillAndTimer() {
 
     if (matchedTasks.length === 0) return;
 
-    // Cari task yang waktu 'now' berada di antara startTime dan endTime secara aman
+    // Cari task yang waktu 'now' berada di antara startTime dan endTime secara longgar
     for (let task of matchedTasks) {
       if (task.startTime && task.endTime) {
         const start = new Date(task.startTime).getTime();
         const end = new Date(task.endTime).getTime();
 
+        // Jika waktu valid dan saat ini berada di rentang waktu task tersebut
         if (!isNaN(start) && !isNaN(end) && now >= start && now <= end) {
           activeTask = task;
           break;
@@ -38,12 +39,14 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // Fallback: jika belum masuk rentang atau pas-pasan, ambil task yang cocok dari URL
+    // Fallback: Jika rentang waktu belum pas atau terlewat sedikit, ambil task yang paling baru dicocokkan
     if (!activeTask) {
       activeTask = matchedTasks[matchedTasks.length - 1];
     }
 
     if (!activeTask) return;
+
+    console.log("[AutoSubmit] Task aktif ditemukan:", activeTask.name);
 
     // 2. Jika tugas ini menggunakan Project Autofill, jalankan mesin pengisi form
     if (activeTask.selectedProject) {
@@ -57,11 +60,17 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer secara aman
+    // 3. Jalankan Floating Timer & Auto-Submit secara pasti
     if (activeTask.endTime) {
-      const targetEnd = new Date(activeTask.endTime).getTime();
+      // Ubah format string datetime-local agar aman dibaca browser (ganti 'T' dengan spasi)
+      const safeEndTimeStr = activeTask.endTime.replace('T', ' ');
+      const targetEnd = new Date(safeEndTimeStr).getTime();
+      
       if (!isNaN(targetEnd)) {
+        console.log(`[Timer] Menyalakan floating timer untuk task "${activeTask.name}" berakhiran: ${activeTask.endTime}`);
         createFloatingTimer(targetEnd, activeTask.name);
+      } else {
+        console.warn("[Timer] Gagal memparsing endTime:", activeTask.endTime);
       }
     }
   });
