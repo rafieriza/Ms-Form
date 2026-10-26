@@ -121,57 +121,32 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Mensimulasikan Double-Click agar terbuka mode ketik teks M/d/yyyy)
+// Handler Tipe Tanggal (Mendukung ketikan "today" / "<now>" atau input manual teks M/d/yyyy)
 function fillDateInput(block, value) {
-  let dateVal = value;
+  let dateVal = value ? value.trim() : "";
   
-  if (!dateVal || dateVal.toLowerCase() === "today") {
+  if (!dateVal || dateVal.toLowerCase() === "today" || dateVal.toLowerCase() === "<now>") {
     const today = new Date();
-    const dd = String(today.getDate());
-    const mm = String(today.getMonth() + 1);
-    const yyyy = today.getFullYear();
+    const mm = today.getMonth() + 1; // Bulan tanpa leading zero (M)
+    const dd = today.getDate();     // Tanggal tanpa leading zero (d)
+    const yyyy = today.getFullYear(); // Tahun 4 digit (yyyy)
+    
     dateVal = `${mm}/${dd}/${yyyy}`;
-  } else if (dateVal.includes('-')) {
-    const parts = dateVal.split('-');
-    if (parts.length === 3) {
-      const yyyy = parts[0];
-      const mm = parseInt(parts[1], 10);
-      const dd = parseInt(parts[2], 10);
-      dateVal = `${mm}/${dd}/${yyyy}`;
-    }
   }
 
-  const dateInput = block.querySelector('[data-automation-id="dateContainer"] input[type="text"], [data-automation-id="dateContainer"] input, input[role="combobox"]');
-  
+  // Menggunakan selector dari konsep kode kedua yang terbukti berhasil menembus bar input text MS Forms
+  const dateInput = block.querySelector('input[type="date"], input[type="text"], input[placeholder*="YYYY"], input[placeholder*="yyyy"], input[placeholder*="M"]');
   if (dateInput) {
-    // Simulasi klik 2x (Double-Click) untuk memicu mode input teks manual pada MS Forms
-    dateInput.focus();
-    dateInput.click();
-    dateInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-    
-    // Beri jeda sekejap agar mode teks terbuka sempurna, lalu masukkan nilai
-    setTimeout(() => {
-      dateInput.value = '';
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(dateInput, dateVal);
+    } else {
+      dateInput.value = dateVal;
+    }
 
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-      if (nativeInputValueSetter) {
-        nativeInputValueSetter.call(dateInput, dateVal);
-      } else {
-        dateInput.value = dateVal;
-      }
-
-      // Tembakkan event input React
-      dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
-      dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
-      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
-      
-      // Kunci dengan Enter
-      dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-      dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-      dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-      
-      dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
-    }, 150);
+    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+    dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
   }
 }
 
