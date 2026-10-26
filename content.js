@@ -121,22 +121,28 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Mendukung ketikan "today" / "<now>" atau input manual teks M/d/yyyy)
+// Handler Tipe Tanggal (Mensimulasikan pengetikan karakter nyata satu-persatu untuk melumpuhkan state React ms-DatePicker)
 function fillDateInput(block, value) {
   let dateVal = value ? value.trim() : "";
   
   if (!dateVal || dateVal.toLowerCase() === "today" || dateVal.toLowerCase() === "<now>") {
     const today = new Date();
-    const mm = today.getMonth() + 1; // Bulan tanpa leading zero (M)
-    const dd = today.getDate();     // Tanggal tanpa leading zero (d)
-    const yyyy = today.getFullYear(); // Tahun 4 digit (yyyy)
-    
+    const mm = today.getMonth() + 1;
+    const dd = today.getDate();
+    const yyyy = today.getFullYear();
     dateVal = `${mm}/${dd}/${yyyy}`;
   }
 
-  // Menggunakan selector dari konsep kode kedua yang terbukti berhasil menembus bar input text MS Forms
-  const dateInput = block.querySelector('input[type="date"], input[type="text"], input[placeholder*="YYYY"], input[placeholder*="yyyy"], input[placeholder*="M"]');
+  // Targetkan secara persis combobox input tanggal di MS Forms sesuai struktur HTML lu
+  const dateInput = block.querySelector('input[role="combobox"], [data-automation-id="dateContainer"] input, input[type="text"]');
+  
   if (dateInput) {
+    // 1. Fokuskan dan klik untuk membuka interaksi
+    dateInput.focus();
+    dateInput.click();
+    dateInput.value = '';
+
+    // 2. Set nilai via native setter agar React mendeteksi perubahan awal
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
     if (nativeInputValueSetter) {
       nativeInputValueSetter.call(dateInput, dateVal);
@@ -144,9 +150,27 @@ function fillDateInput(block, value) {
       dateInput.value = dateVal;
     }
 
-    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+    // 3. Tembakkan event input standar
+    dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
+    dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // 4. Simulasi ketikan keyboard per karakter (supaya state combobox React Forms "menerima" ketikan tersebut)
+    for (let i = 0; i < dateVal.length; i++) {
+      const char = dateVal[i];
+      dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: char, char: char }));
+      dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: char, char: char }));
+      dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: char, char: char }));
+    }
+
+    // 5. Kunci dengan tombol Enter agar popup kalender tertutup dan nilai tersimpan
+    dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+    dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+    
     dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
+    console.log(`[Autofill] Berhasil menyuntikkan tanggal via keystroke: ${dateVal}`);
+  } else {
+    console.warn("[Autofill] Kotak input tanggal combobox tidak ditemukan!");
   }
 }
 
