@@ -121,7 +121,7 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Diperkuat agar tembus state React MS Forms dengan format M/d/yyyy)
+// Handler Tipe Tanggal (Mengonversi format input ke M/d/yyyy dan fokus ke single-line text input)
 function fillDateInput(block, value) {
   let dateVal = value;
   
@@ -132,6 +132,7 @@ function fillDateInput(block, value) {
     const yyyy = today.getFullYear();
     dateVal = `${mm}/${dd}/${yyyy}`;
   } else if (dateVal.includes('-')) {
+    // Parsing format YYYY-MM-DD dari picker HTML ke M/d/yyyy MS Forms
     const parts = dateVal.split('-');
     if (parts.length === 3) {
       const yyyy = parts[0];
@@ -141,10 +142,11 @@ function fillDateInput(block, value) {
     }
   }
 
-  const dateInput = block.querySelector('[data-automation-id="dateContainer"] input, input[role="combobox"]');
+  // Mengincar elemen <input> teks single-line di dalam kontainer tanggal MS Forms
+  const dateInput = block.querySelector('[data-automation-id="dateContainer"] input[type="text"], [data-automation-id="dateContainer"] input, input[role="combobox"]');
   
   if (dateInput) {
-    // Fokus dan aktifkan elemen kalender form
+    // Fokus dan klik langsung ke kotak teks single line (bukan ikon kalender)
     dateInput.focus();
     dateInput.click();
     dateInput.value = '';
@@ -156,12 +158,12 @@ function fillDateInput(block, value) {
       dateInput.value = dateVal;
     }
 
-    // Tembakkan event input khusus tipe insertText agar React mendeteksi perubahan state
+    // Tembakkan event input agar React Forms merekam perubahan nilai teks
     dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
     dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
     
-    // Simulasi tombol Enter untuk mengunci tanggal pada picker MS Forms
+    // Simulasi penekanan tombol Enter untuk mengunci tanggal
     dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
     dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
     dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
