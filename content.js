@@ -207,8 +207,14 @@ function createFloatingTimer(targetEndTime, taskName) {
   document.getElementById('stopTimerBtn').addEventListener('click', () => {
     clearInterval(interval);
     timerBox.remove();
+    
+    // Kirim pesan ke background untuk menghapus data tugas & alarm secara tuntas
+    if (taskName) {
+      chrome.runtime.sendMessage({ action: "cleanupTask", taskName: taskName }, (response) => {
+        console.log("Task stopped and cleaned up:", response);
+      });
+    }
   });
-}
 
 function triggerSubmit(taskName) {
   let submitBtn = document.querySelector('button[data-automation-id="submitButton"]');
