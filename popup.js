@@ -50,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- HOME / JADWAL FORM ---
-  const taskForm = document.getElementById('homeView'); // Menggunakan container form di homeView
   const projectSelect = document.getElementById('selectedProject');
   const submitBtn = document.getElementById('submitBtn');
   const resetBtn = document.getElementById('resetBtn');
@@ -95,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('formUrl').value = '';
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
+        projectSelect.value = '';
         switchTab(navAlarms, alarmsView);
       } else {
         alert(response?.message || "Gagal menyetel alarm.");
