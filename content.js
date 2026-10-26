@@ -5,27 +5,42 @@ window.addEventListener("load", () => {
 
 function initAutoFillAndTimer() {
   const currentUrl = window.location.href;
+  const now = Date.now();
 
   // 1. Ambil data tugas aktif dari chrome.storage.local
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
 
+    // Cari task yang URL-nya cocok DAN waktu sekarang berada di antara startTime dan endTime masing-masing task
     for (let key in items) {
       if (key === "projects") continue; // Abaikan data master project
       
       const task = items[key];
-      if (task && task.formUrl) {
+      if (task && task.formUrl && task.startTime && task.endTime) {
         if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
-          activeTask = task;
-          break;
+          const start = new Date(task.startTime).getTime();
+          const end = new Date(task.endTime).getTime();
+          
+          // Validasi ketat: pastikan task ini yang sedang aktif sesuai rentang waktunya saat ini
+          if (now >= start && now <= end) {
+            activeTask = task;
+            break;
+          }
         }
       }
     }
 
+    // Fallback pencarian sekunder jika belum masuk jam atau pas lewat dikit
     if (!activeTask) {
-      const keys = Object.keys(items).filter(k => k !== 'projects' && items[k] && items[k].endTime);
-      if (keys.length > 0) {
-        activeTask = items[keys[keys.length - 1]];
+      for (let key in items) {
+        if (key === "projects") continue;
+        const task = items[key];
+        if (task && task.formUrl) {
+          if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
+            activeTask = task;
+            break;
+          }
+        }
       }
     }
 
@@ -43,7 +58,7 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer
+    // 3. Jalankan Floating Timer sesuai target end time task tersebut secara independen
     if (activeTask.endTime) {
       const targetEnd = new Date(activeTask.endTime).getTime();
       createFloatingTimer(targetEnd, activeTask.name);
