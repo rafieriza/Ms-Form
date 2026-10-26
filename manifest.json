@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "AutoSubmit Ms Form",
+  "version": "1.0",
+  "description": "Ekstensi browser untuk menjadwalkan, auto-submit, dan autofill pada Microsoft Forms.",
+  "permissions": [
+    "tabs",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://forms.cloud.microsoft/*",
+    "https://forms.office.com/*",
+    "https://*.office.com/*",
+    "https://*.office365.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://forms.cloud.microsoft/*",
+        "https://forms.office.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
