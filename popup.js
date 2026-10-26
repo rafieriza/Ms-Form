@@ -151,10 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
     row.className = 'rule-row';
 
     const getValueInputHTML = (currentType, val) => {
+      // Jika tipe Date, gunakan input text bebas agar user bisa ketik "today" atau format manual "M/d/yyyy"
       if (currentType === 'Date') {
-        // Jika val adalah 'today', biarkan kosong atau tampilkan date picker
-        const dateVal = (val && val !== 'today') ? val : '';
-        return `<input type="date" class="rule-value" value="${dateVal}" placeholder="today">`;
+        return `<input type="text" class="rule-value" placeholder="today or M/d/yyyy" value="${val}">`;
       }
       return `<input type="text" class="rule-value" placeholder="Value or today" value="${val}">`;
     };
@@ -178,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     typeSelect.addEventListener('change', (e) => {
       const selectedType = e.target.value;
       const currentVal = row.querySelector('.rule-value') ? row.querySelector('.rule-value').value : '';
-      valueContainer.innerHTML = getValueInputHTML(selectedType, selectedType === 'Date' ? '' : currentVal);
+      valueContainer.innerHTML = getValueInputHTML(selectedType, currentVal);
     });
 
     row.querySelector('.delete-rule-btn').addEventListener('click', () => row.remove());
