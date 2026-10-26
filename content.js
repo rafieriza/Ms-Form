@@ -121,7 +121,7 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Disesuaikan agar tembus proteksi React/Office UI Fabric MS Forms)
+// Handler Tipe Tanggal (Diperkuat agar tembus state React MS Forms dengan format M/d/yyyy)
 function fillDateInput(block, value) {
   let dateVal = value;
   
@@ -144,9 +144,10 @@ function fillDateInput(block, value) {
   const dateInput = block.querySelector('[data-automation-id="dateContainer"] input, input[role="combobox"]');
   
   if (dateInput) {
-    // Fokuskan elemen terlebih dahulu agar state picker aktif
+    // Fokus dan aktifkan elemen kalender form
     dateInput.focus();
     dateInput.click();
+    dateInput.value = '';
 
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
     if (nativeInputValueSetter) {
@@ -155,11 +156,16 @@ function fillDateInput(block, value) {
       dateInput.value = dateVal;
     }
 
-    // Memicu serangkaian event DOM & React agar form mendeteksi perubahan nilai
+    // Tembakkan event input khusus tipe insertText agar React mendeteksi perubahan state
     dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
-    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+    dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
-    dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    
+    // Simulasi tombol Enter untuk mengunci tanggal pada picker MS Forms
+    dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+    dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+    dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+    
     dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
   }
 }
