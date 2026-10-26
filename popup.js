@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   newProjectBtn.addEventListener('click', () => {
     projectListView.style.display = 'none';
     projectEditorView.style.display = 'block';
-    editProjectNameInput.value = ''; // Kosongkan agar bisa diketik bebas oleh user
+    editProjectNameInput.value = '';
     rulesContainer.innerHTML = '';
     addRuleRow();
   });
@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProjectList();
   });
 
-  // Validasi Real-time Border Start/End Time
   const startTimeInput = document.getElementById('startTime');
   const endTimeInput = document.getElementById('endTime');
 
@@ -153,7 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getValueInputHTML = (currentType, val) => {
       if (currentType === 'Date') {
-        return `<input type="date" class="rule-value" value="${val}">`;
+        // Jika val adalah 'today', biarkan kosong atau tampilkan date picker
+        const dateVal = (val && val !== 'today') ? val : '';
+        return `<input type="date" class="rule-value" value="${dateVal}" placeholder="today">`;
       }
       return `<input type="text" class="rule-value" placeholder="Value or today" value="${val}">`;
     };
