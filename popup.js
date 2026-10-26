@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- NAVIGASI TAB ---
   const navHome = document.getElementById('navHome');
   const navProjects = document.getElementById('navProjects');
   const navAlarms = document.getElementById('navAlarms');
@@ -8,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const projectsView = document.getElementById('projectsView');
   const alarmsView = document.getElementById('alarmsView');
 
-  // Sub-view dalam tab Projects
   const projectListView = document.getElementById('projectListView');
   const projectEditorView = document.getElementById('projectEditorView');
   const newProjectBtn = document.getElementById('newProjectBtn');
@@ -34,13 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
   navProjects.addEventListener('click', () => switchTab(navProjects, projectsView));
   navAlarms.addEventListener('click', () => switchTab(navAlarms, alarmsView));
 
-  // Tombol navigasi di dalam tab Projects
   newProjectBtn.addEventListener('click', () => {
     projectListView.style.display = 'none';
     projectEditorView.style.display = 'block';
-    document.getElementById('editProjectName').value = "Project Baru " + Date.now().toString().slice(-4);
+    editProjectNameInput.value = ''; // Kosongkan agar bisa diketik bebas oleh user
     rulesContainer.innerHTML = '';
-    addRuleRow(); // Tambah satu baris rule default
+    addRuleRow();
   });
 
   backToProjectsBtn.addEventListener('click', () => {
@@ -49,7 +46,35 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProjectList();
   });
 
-  // --- HOME / JADWAL FORM ---
+  // Validasi Real-time Border Start/End Time
+  const startTimeInput = document.getElementById('startTime');
+  const endTimeInput = document.getElementById('endTime');
+
+  function validateTimes() {
+    const startVal = new Date(startTimeInput.value).getTime();
+    const endVal = new Date(endTimeInput.value).getTime();
+    const now = Date.now();
+
+    if (startTimeInput.value) {
+      if (startVal < now) {
+        startTimeInput.classList.add('error-border');
+      } else {
+        startTimeInput.classList.remove('error-border');
+      }
+    }
+
+    if (startTimeInput.value && endTimeInput.value) {
+      if (endVal <= startVal) {
+        endTimeInput.classList.add('error-border');
+      } else {
+        endTimeInput.classList.remove('error-border');
+      }
+    }
+  }
+
+  startTimeInput.addEventListener('input', validateTimes);
+  endTimeInput.addEventListener('input', validateTimes);
+
   const projectSelect = document.getElementById('selectedProject');
   const submitBtn = document.getElementById('submitBtn');
   const resetBtn = document.getElementById('resetBtn');
@@ -69,11 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   submitBtn.addEventListener('click', () => {
-    const taskName = document.getElementById('formName').value.trim();
+    const taskName = document.getElementById('taskName').value.trim();
     const formUrl = document.getElementById('formUrl').value.trim();
     const selectedProject = projectSelect.value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
+    const startTime = startTimeInput.value;
+    const endTime = endTimeInput.value;
 
     if (!taskName || !formUrl || !startTime || !endTime) {
       alert("Semua field wajib diisi!");
@@ -90,10 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, (response) => {
       if (response && response.status === "success") {
         alert(response.message);
-        document.getElementById('formName').value = '';
+        document.getElementById('taskName').value = '';
         document.getElementById('formUrl').value = '';
-        document.getElementById('startTime').value = '';
-        document.getElementById('endTime').value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        startTimeInput.classList.remove('error-border');
+        endTimeInput.classList.remove('error-border');
         projectSelect.value = '';
         switchTab(navAlarms, alarmsView);
       } else {
@@ -103,14 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   resetBtn.addEventListener('click', () => {
-    document.getElementById('formName').value = '';
+    document.getElementById('taskName').value = '';
     document.getElementById('formUrl').value = '';
-    document.getElementById('startTime').value = '';
-    document.getElementById('endTime').value = '';
+    startTimeInput.value = '';
+    endTimeInput.value = '';
+    startTimeInput.classList.remove('error-border');
+    endTimeInput.classList.remove('error-border');
     projectSelect.value = '';
   });
 
-  // --- PROJECTS MANAGEMENT & DYNAMIC RULES ---
   const saveProjectBtn = document.getElementById('saveProjectBtn');
   const addRuleBtn = document.getElementById('addRuleBtn');
   const rulesContainer = document.getElementById('rulesContainer');
@@ -127,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentType === 'Date') {
         return `<input type="date" class="rule-value" value="${val}">`;
       }
-      return `<input type="text" class="rule-value" placeholder="Value or <now>" value="${val}">`;
+      return `<input type="text" class="rule-value" placeholder="Value or today" value="${val}">`;
     };
 
     row.innerHTML = `
@@ -239,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- ALARMS LIST ---
   const alarmListContainer = document.getElementById('alarmList');
 
   function loadAlarmsList() {
@@ -288,6 +315,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial load
   loadProjectDropdown();
 });
