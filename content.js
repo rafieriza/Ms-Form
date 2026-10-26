@@ -1,4 +1,3 @@
-// Tunggu hingga halaman Microsoft Forms benar-benar siap dan termuat
 window.addEventListener("load", () => {
   setTimeout(initAutoFillAndTimer, 1500);
 });
@@ -6,12 +5,11 @@ window.addEventListener("load", () => {
 function initAutoFillAndTimer() {
   const currentUrl = window.location.href;
 
-  // 1. Ambil data tugas aktif dari chrome.storage.local
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
 
     for (let key in items) {
-      if (key === "projects") continue; // Abaikan data master project
+      if (key === "projects") continue;
       
       const task = items[key];
       if (task && task.formUrl) {
@@ -31,7 +29,6 @@ function initAutoFillAndTimer() {
 
     if (!activeTask) return;
 
-    // 2. Jika tugas ini menggunakan Project Autofill, jalankan mesin pengisi form
     if (activeTask.selectedProject) {
       const selectedProjectName = activeTask.selectedProject;
       const projects = items.projects || {};
@@ -43,7 +40,6 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer untuk hitung mundur Auto-Submit (membawa nama tugas)
     if (activeTask.endTime) {
       const targetEnd = new Date(activeTask.endTime).getTime();
       createFloatingTimer(targetEnd, activeTask.name);
@@ -51,9 +47,6 @@ function initAutoFillAndTimer() {
   });
 }
 
-// ==========================================
-// MESIN AUTOFILL MICROSOFT FORMS
-// ==========================================
 function executeAutofill(rules) {
   const questionBlocks = document.querySelectorAll('[data-automation-id="questionItem"]');
 
@@ -84,7 +77,6 @@ function executeAutofill(rules) {
   });
 }
 
-// Handler Tipe Teks (Nama & NIM)
 function fillTextInput(block, value) {
   const inputEl = block.querySelector('input[data-automation-id="textInput"], textarea');
   if (inputEl) {
@@ -105,7 +97,6 @@ function fillTextInput(block, value) {
   }
 }
 
-// Handler Tipe Pilihan Ganda / Checkbox
 function fillChoiceInput(block, targetValue) {
   const options = block.querySelectorAll('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]');
   
@@ -121,18 +112,18 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Mendukung input date picker dari popup atau tag <now> / today)
+// Handler Tanggal: Mengubah format YYYY-MM-DD menjadi MM/DD/YYYY atau keyword "today"
 function fillDateInput(block, value) {
   let dateVal = value;
   
-  if (!dateVal || dateVal.toLowerCase() === "today" || dateVal.toLowerCase() === "<now>") {
+  if (!dateVal || dateVal.toLowerCase() === "today") {
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const yyyy = today.getFullYear();
     dateVal = `${mm}/${dd}/${yyyy}`;
   } else if (dateVal.includes('-')) {
-    // Mengonversi format YYYY-MM-DD dari HTML date picker ke MM/DD/YYYY
+    // Ubah dari YYYY-MM-DD (bawaan date picker HTML) ke MM/DD/YYYY (standar MS Forms)
     const parts = dateVal.split('-');
     if (parts.length === 3) {
       const yyyy = parts[0];
@@ -142,7 +133,6 @@ function fillDateInput(block, value) {
     }
   }
 
-  // Mengincar elemen input tanggal spesifik di dalam dateContainer
   const dateInput = block.querySelector('[data-automation-id="dateContainer"] input, input[role="combobox"]');
   
   if (dateInput) {
@@ -159,9 +149,6 @@ function fillDateInput(block, value) {
   }
 }
 
-// ==========================================
-// FLOATING TIMER & AUTO-SUBMIT
-// ==========================================
 function createFloatingTimer(targetEndTime, taskName) {
   if (document.getElementById('autoSubmitTimerBox')) return;
 
@@ -182,7 +169,6 @@ function createFloatingTimer(targetEndTime, taskName) {
     max-width: 220px;
   `;
 
-  // Menambahkan elemen nama tugas di bawah judul timer
   timerBox.innerHTML = `
     <div style="font-weight: bold; font-size: 14px; color: #333;">Auto-Submit Timer</div>
     <div style="font-size: 12px; color: #0078d4; font-weight: bold; margin: 3px 0 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${taskName || 'Tugas Form'}">${taskName || 'Tugas Form'}</div>
