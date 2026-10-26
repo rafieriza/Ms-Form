@@ -1,0 +1,213 @@
+body {
+  width: 330px;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+h2 {
+  font-size: 18px;
+  text-align: center;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 12px;
+  color: #555;
+  display: block;
+  margin-bottom: 3px;
+  font-weight: bold;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #0078d4;
+  border-radius: 4px;
+  outline: none;
+  font-size: 13px;
+  background-color: white;
+}
+
+/* Garis merah jika waktu invalid/lewat */
+.form-group input.error-border {
+  border-color: red !important;
+  background-color: #fff8f8;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #555;
+}
+
+.btn-secondary:hover {
+  background-color: #d0d0d0;
+}
+
+.btn-primary {
+  background-color: #0078d4;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #106ebe;
+}
+
+/* Navigasi Bawah 3 Tab (Home, Projects, Alarms) */
+.footer-nav {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.nav-item {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  flex: 1;
+}
+
+.nav-item.active {
+  color: #0078d4;
+  font-weight: bold;
+}
+
+.nav-item span {
+  font-size: 16px;
+}
+
+.nav-item p {
+  margin: 2px 0 0 0;
+}
+
+/* Container Tampilan List (Alarms & Projects) */
+.view-section {
+  min-height: 250px;
+}
+
+.list-container {
+  min-height: 180px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.no-data {
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+  margin-top: 40px;
+}
+
+/* Card Item untuk Alarm & Project */
+.card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 12px;
+}
+
+.card-info p {
+  margin: 0;
+}
+
+.card-title {
+  font-weight: bold;
+  color: #333;
+}
+
+.card-subtitle {
+  color: #666;
+  font-size: 11px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #d9534f;
+}
+
+.edit-btn {
+  background: #0078d4;
+  color: white;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-right: 5px;
+}
+
+/* Layout Baris Rules di Editor Project (Disinkronkan untuk Text & Date Picker) */
+.rule-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.rule-row select {
+  width: 28%;
+  padding: 5px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.rule-row input.rule-question {
+  width: 36%;
+  padding: 5px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+/* Penyesuaian kontainer nilai & input tipe date/text agar sejajar rapi */
+.rule-row .value-container {
+  width: 36%;
+  display: flex;
+}
+
+.rule-row input.rule-value {
+  width: 100%;
+  padding: 5px;
+  font-size: 11px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.rule-row input[type="date"].rule-value {
+  font-size: 10px; /* Menyesuaikan ukuran font tanggal agar muat sempurna di dalam popup */
+}
