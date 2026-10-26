@@ -121,7 +121,7 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tipe Tanggal (Mengonversi format input ke M/d/yyyy dan fokus ke single-line text input)
+// Handler Tipe Tanggal (Mensimulasikan Double-Click agar terbuka mode ketik teks M/d/yyyy)
 function fillDateInput(block, value) {
   let dateVal = value;
   
@@ -132,7 +132,6 @@ function fillDateInput(block, value) {
     const yyyy = today.getFullYear();
     dateVal = `${mm}/${dd}/${yyyy}`;
   } else if (dateVal.includes('-')) {
-    // Parsing format YYYY-MM-DD dari picker HTML ke M/d/yyyy MS Forms
     const parts = dateVal.split('-');
     if (parts.length === 3) {
       const yyyy = parts[0];
@@ -142,33 +141,37 @@ function fillDateInput(block, value) {
     }
   }
 
-  // Mengincar elemen <input> teks single-line di dalam kontainer tanggal MS Forms
   const dateInput = block.querySelector('[data-automation-id="dateContainer"] input[type="text"], [data-automation-id="dateContainer"] input, input[role="combobox"]');
   
   if (dateInput) {
-    // Fokus dan klik langsung ke kotak teks single line (bukan ikon kalender)
+    // Simulasi klik 2x (Double-Click) untuk memicu mode input teks manual pada MS Forms
     dateInput.focus();
     dateInput.click();
-    dateInput.value = '';
-
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-    if (nativeInputValueSetter) {
-      nativeInputValueSetter.call(dateInput, dateVal);
-    } else {
-      dateInput.value = dateVal;
-    }
-
-    // Tembakkan event input agar React Forms merekam perubahan nilai teks
-    dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
-    dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
-    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+    dateInput.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
     
-    // Simulasi penekanan tombol Enter untuk mengunci tanggal
-    dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-    dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-    dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-    
-    dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
+    // Beri jeda sekejap agar mode teks terbuka sempurna, lalu masukkan nilai
+    setTimeout(() => {
+      dateInput.value = '';
+
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(dateInput, dateVal);
+      } else {
+        dateInput.value = dateVal;
+      }
+
+      // Tembakkan event input React
+      dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
+      dateInput.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: dateVal }));
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Kunci dengan Enter
+      dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+      dateInput.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+      dateInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+      
+      dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
+    }, 150);
   }
 }
 
