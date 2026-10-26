@@ -12,6 +12,7 @@ function initAutoFillAndTimer() {
     let activeTask = null;
     const matchedTasks = [];
 
+    // Kumpulkan semua task yang URL-nya cocok dengan halaman saat ini
     for (let key in items) {
       if (key === "projects") continue; // Abaikan data master project
       
@@ -25,13 +26,12 @@ function initAutoFillAndTimer() {
 
     if (matchedTasks.length === 0) return;
 
-    // Cari task yang waktu 'now' berada di antara startTime dan endTime secara longgar
+    // Prioritaskan task yang waktu 'now' sedang berada di dalam rentang startTime & endTime-nya
     for (let task of matchedTasks) {
       if (task.startTime && task.endTime) {
         const start = new Date(task.startTime).getTime();
         const end = new Date(task.endTime).getTime();
 
-        // Jika waktu valid dan saat ini berada di rentang waktu task tersebut
         if (!isNaN(start) && !isNaN(end) && now >= start && now <= end) {
           activeTask = task;
           break;
@@ -39,14 +39,13 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // Fallback: Jika rentang waktu belum pas atau terlewat sedikit, ambil task yang paling baru dicocokkan
+    // Jika belum masuk rentang waktu atau pas-pasan, ambil task berdasarkan urutan waktu mulai terdekat
     if (!activeTask) {
-      activeTask = matchedTasks[matchedTasks.length - 1];
+      matchedTasks.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      activeTask = matchedTasks[0];
     }
 
     if (!activeTask) return;
-
-    console.log("[AutoSubmit] Task aktif ditemukan:", activeTask.name);
 
     // 2. Jika tugas ini menggunakan Project Autofill, jalankan mesin pengisi form
     if (activeTask.selectedProject) {
@@ -60,17 +59,11 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer & Auto-Submit secara pasti
+    // 3. Jalankan Floating Timer sesuai target end time task aktif tersebut
     if (activeTask.endTime) {
-      // Ubah format string datetime-local agar aman dibaca browser (ganti 'T' dengan spasi)
-      const safeEndTimeStr = activeTask.endTime.replace('T', ' ');
-      const targetEnd = new Date(safeEndTimeStr).getTime();
-      
+      const targetEnd = new Date(activeTask.endTime).getTime();
       if (!isNaN(targetEnd)) {
-        console.log(`[Timer] Menyalakan floating timer untuk task "${activeTask.name}" berakhiran: ${activeTask.endTime}`);
         createFloatingTimer(targetEnd, activeTask.name);
-      } else {
-        console.warn("[Timer] Gagal memparsing endTime:", activeTask.endTime);
       }
     }
   });
@@ -195,7 +188,7 @@ function fillDateInput(block, value) {
     dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
     console.log(`[Autofill] Berhasil menyuntikkan tanggal via keystroke: ${dateVal}`);
   } else {
-    console.warn("[Autofill] Kotak input tanggal combobox tidak ditemukan!");
+    console.warn("[Autofiktif] Kotak input tanggal combobox tidak ditemukan!");
   }
 }
 
