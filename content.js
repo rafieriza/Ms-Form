@@ -5,10 +5,12 @@ window.addEventListener("load", () => {
 
 function initAutoFillAndTimer() {
   const currentUrl = window.location.href;
+  const now = Date.now();
 
   // 1. Ambil data tugas aktif dari chrome.storage.local
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
+    const matchedTasks = [];
 
     for (let key in items) {
       if (key === "projects") continue; // Abaikan data master project
@@ -16,17 +18,29 @@ function initAutoFillAndTimer() {
       const task = items[key];
       if (task && task.formUrl) {
         if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
+          matchedTasks.push(task);
+        }
+      }
+    }
+
+    if (matchedTasks.length === 0) return;
+
+    // Cari task yang waktu 'now' berada di antara startTime dan endTime secara aman
+    for (let task of matchedTasks) {
+      if (task.startTime && task.endTime) {
+        const start = new Date(task.startTime).getTime();
+        const end = new Date(task.endTime).getTime();
+
+        if (!isNaN(start) && !isNaN(end) && now >= start && now <= end) {
           activeTask = task;
           break;
         }
       }
     }
 
+    // Fallback: jika belum masuk rentang atau pas-pasan, ambil task yang cocok dari URL
     if (!activeTask) {
-      const keys = Object.keys(items).filter(k => k !== 'projects' && items[k] && items[k].endTime);
-      if (keys.length > 0) {
-        activeTask = items[keys[keys.length - 1]];
-      }
+      activeTask = matchedTasks[matchedTasks.length - 1];
     }
 
     if (!activeTask) return;
@@ -43,10 +57,12 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer
+    // 3. Jalankan Floating Timer secara aman
     if (activeTask.endTime) {
       const targetEnd = new Date(activeTask.endTime).getTime();
-      createFloatingTimer(targetEnd, activeTask.name);
+      if (!isNaN(targetEnd)) {
+        createFloatingTimer(targetEnd, activeTask.name);
+      }
     }
   });
 }
