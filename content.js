@@ -5,44 +5,28 @@ window.addEventListener("load", () => {
 
 function initAutoFillAndTimer() {
   const currentUrl = window.location.href;
-  const now = Date.now();
 
   // 1. Ambil data tugas aktif dari chrome.storage.local
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
 
-    // Cari task yang URL-nya cocok terlebih dahulu
-    const matchedTasks = [];
     for (let key in items) {
       if (key === "projects") continue; // Abaikan data master project
       
       const task = items[key];
       if (task && task.formUrl) {
         if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
-          matchedTasks.push(task);
-        }
-      }
-    }
-
-    if (matchedTasks.length === 0) return;
-
-    // Pilih task yang waktu 'now' nya paling mendekati atau berada di dalam rentang startTime & endTime
-    for (let task of matchedTasks) {
-      if (task.startTime && task.endTime) {
-        const start = new Date(task.startTime.replace('T', ' ')).getTime();
-        const end = new Date(task.endTime.replace('T', ' ')).getTime();
-
-        // Jika waktu sekarang sudah melewati start time dan belum lewat end time, pilih ini!
-        if (now >= start && now <= end) {
           activeTask = task;
           break;
         }
       }
     }
 
-    // Jika belum masuk rentang waktu tapi task ada, ambil task terdekat yang URL-nya cocok
     if (!activeTask) {
-      activeTask = matchedTasks[matchedTasks.length - 1];
+      const keys = Object.keys(items).filter(k => k !== 'projects' && items[k] && items[k].endTime);
+      if (keys.length > 0) {
+        activeTask = items[keys[keys.length - 1]];
+      }
     }
 
     if (!activeTask) return;
@@ -61,7 +45,7 @@ function initAutoFillAndTimer() {
 
     // 3. Jalankan Floating Timer
     if (activeTask.endTime) {
-      const targetEnd = new Date(activeTask.endTime.replace('T', ' ')).getTime();
+      const targetEnd = new Date(activeTask.endTime).getTime();
       createFloatingTimer(targetEnd, activeTask.name);
     }
   });
