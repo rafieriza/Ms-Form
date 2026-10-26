@@ -1,3 +1,4 @@
+// Tunggu hingga halaman Microsoft Forms benar-benar siap dan termuat
 window.addEventListener("load", () => {
   setTimeout(initAutoFillAndTimer, 1500);
 });
@@ -112,23 +113,23 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tanggal: Mengubah format YYYY-MM-DD menjadi MM/DD/YYYY atau keyword "today"
+// Handler Tanggal: Mengubah format YYYY-MM-DD menjadi MM/DD/YYYY persis seperti MS Forms
 function fillDateInput(block, value) {
   let dateVal = value;
   
   if (!dateVal || dateVal.toLowerCase() === "today") {
     const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate());
+    const mm = String(today.getMonth() + 1);
     const yyyy = today.getFullYear();
-    dateVal = `${mm}/${dd}/${yyyy}`;
+    dateVal = `${mm}/${dd}/${yyyy}`; // Format M/d/yyyy tanpa leading zero jika mau aman, atau dengan padStart
   } else if (dateVal.includes('-')) {
-    // Ubah dari YYYY-MM-DD (bawaan date picker HTML) ke MM/DD/YYYY (standar MS Forms)
+    // Ubah dari YYYY-MM-DD (bawaan HTML date picker) ke M/d/yyyy (Microsoft Forms)
     const parts = dateVal.split('-');
     if (parts.length === 3) {
       const yyyy = parts[0];
-      const mm = parts[1];
-      const dd = parts[2];
+      const mm = parseInt(parts[1], 10); // Menghilangkan leading zero (misal "10" tetap "10", "05" jadi "5" jika perlu, atau biarkan standar)
+      const dd = parseInt(parts[2], 10);
       dateVal = `${mm}/${dd}/${yyyy}`;
     }
   }
