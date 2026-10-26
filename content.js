@@ -11,37 +11,38 @@ function initAutoFillAndTimer() {
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
 
-    // Cari task yang URL-nya cocok DAN waktu sekarang berada di antara startTime dan endTime masing-masing task
+    // Cari task yang URL-nya cocok terlebih dahulu
+    const matchedTasks = [];
     for (let key in items) {
       if (key === "projects") continue; // Abaikan data master project
       
       const task = items[key];
-      if (task && task.formUrl && task.startTime && task.endTime) {
+      if (task && task.formUrl) {
         if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
-          const start = new Date(task.startTime).getTime();
-          const end = new Date(task.endTime).getTime();
-          
-          // Validasi ketat: pastikan task ini yang sedang aktif sesuai rentang waktunya saat ini
-          if (now >= start && now <= end) {
-            activeTask = task;
-            break;
-          }
+          matchedTasks.push(task);
         }
       }
     }
 
-    // Fallback pencarian sekunder jika belum masuk jam atau pas lewat dikit
-    if (!activeTask) {
-      for (let key in items) {
-        if (key === "projects") continue;
-        const task = items[key];
-        if (task && task.formUrl) {
-          if (currentUrl.includes(task.formUrl) || task.formUrl.includes(currentUrl)) {
-            activeTask = task;
-            break;
-          }
+    if (matchedTasks.length === 0) return;
+
+    // Pilih task yang waktu 'now' nya paling mendekati atau berada di dalam rentang startTime & endTime
+    for (let task of matchedTasks) {
+      if (task.startTime && task.endTime) {
+        const start = new Date(task.startTime.replace('T', ' ')).getTime();
+        const end = new Date(task.endTime.replace('T', ' ')).getTime();
+
+        // Jika waktu sekarang sudah melewati start time dan belum lewat end time, pilih ini!
+        if (now >= start && now <= end) {
+          activeTask = task;
+          break;
         }
       }
+    }
+
+    // Jika belum masuk rentang waktu tapi task ada, ambil task terdekat yang URL-nya cocok
+    if (!activeTask) {
+      activeTask = matchedTasks[matchedTasks.length - 1];
     }
 
     if (!activeTask) return;
@@ -58,9 +59,9 @@ function initAutoFillAndTimer() {
       }
     }
 
-    // 3. Jalankan Floating Timer sesuai target end time task tersebut secara independen
+    // 3. Jalankan Floating Timer
     if (activeTask.endTime) {
-      const targetEnd = new Date(activeTask.endTime).getTime();
+      const targetEnd = new Date(activeTask.endTime.replace('T', ' ')).getTime();
       createFloatingTimer(targetEnd, activeTask.name);
     }
   });
