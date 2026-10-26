@@ -13,7 +13,7 @@
     <div id="homeView" class="view-section">
       <div class="form-group">
         <label>Name</label>
-        <input type="text" id="formName" placeholder="Masukkan nama tugas">
+        <input type="text" id="taskName" placeholder="Masukkan nama tugas">
       </div>
 
       <div class="form-group">
@@ -21,7 +21,6 @@
         <input type="text" id="formUrl" placeholder="https://forms.cloud.microsoft/...">
       </div>
 
-      <!-- Pilihan Project Autofill -->
       <div class="form-group">
         <label>Autofill Project (Opsional)</label>
         <select id="selectedProject">
@@ -45,9 +44,8 @@
       </div>
     </div>
 
-    <!-- TAB 2: PROJECTS (Katalog & Editor Autofill) -->
+    <!-- TAB 2: PROJECTS -->
     <div id="projectsView" class="view-section" style="display: none;">
-      <!-- Sub-view A: List Project -->
       <div id="projectListView">
         <button id="newProjectBtn" class="btn-primary" style="margin-bottom: 10px; width: 100%;">+ Buat Project Baru</button>
         <div id="projectList" class="list-container">
@@ -55,32 +53,29 @@
         </div>
       </div>
 
-      <!-- Sub-view B: Editor Rules Project -->
       <div id="projectEditorView" style="display: none;">
         <button id="backToProjectsBtn" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; margin-bottom: 10px;">&larr; Kembali</button>
         <div class="form-group">
           <label>Nama Project</label>
-          <input type="text" id="editProjectName" readonly style="background-color: #eee;">
+          <input type="text" id="editProjectName" placeholder="Masukkan nama project">
         </div>
         <div class="form-group">
           <label>Aturan Isian (Rules)</label>
-          <div id="rulesContainer">
-            <!-- Dynamic Rules (Text, Choice, Date) akan dirender secara dinamis di sini oleh JS -->
-          </div>
+          <div id="rulesContainer"></div>
           <button id="addRuleBtn" class="btn-secondary" style="margin-top: 5px; width: 100%; font-size: 11px;">+ Tambah Rule</button>
         </div>
         <button id="saveProjectBtn" class="btn-primary" style="width: 100%; margin-top: 10px;">SIMPAN PROJECT</button>
       </div>
     </div>
 
-    <!-- TAB 3: ALARMS (Daftar Tugas Aktif) -->
+    <!-- TAB 3: ALARMS -->
     <div id="alarmsView" class="view-section" style="display: none;">
-      <div id="alarmsList" class="list-container">
+      <div id="alarmList" class="list-container">
         <p class="no-data">Belum ada alarm tersimpan.</p>
       </div>
     </div>
 
-    <!-- Navigasi Bawah 3 Menu (Home, Projects, Alarms) -->
+    <!-- Footer Nav -->
     <div class="footer-nav">
       <div class="nav-item active" id="navHome">
         <span>🏠</span>
