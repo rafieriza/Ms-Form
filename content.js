@@ -6,11 +6,12 @@ window.addEventListener("load", () => {
 function initAutoFillAndTimer() {
   const currentUrl = window.location.href;
 
+  // 1. Ambil data tugas aktif dari chrome.storage.local
   chrome.storage.local.get(null, (items) => {
     let activeTask = null;
 
     for (let key in items) {
-      if (key === "projects") continue;
+      if (key === "projects") continue; // Abaikan data master project
       
       const task = items[key];
       if (task && task.formUrl) {
@@ -30,6 +31,7 @@ function initAutoFillAndTimer() {
 
     if (!activeTask) return;
 
+    // 2. Jika tugas ini menggunakan Project Autofill, jalankan mesin pengisi form
     if (activeTask.selectedProject) {
       const selectedProjectName = activeTask.selectedProject;
       const projects = items.projects || {};
@@ -41,6 +43,7 @@ function initAutoFillAndTimer() {
       }
     }
 
+    // 3. Jalankan Floating Timer
     if (activeTask.endTime) {
       const targetEnd = new Date(activeTask.endTime).getTime();
       createFloatingTimer(targetEnd, activeTask.name);
@@ -48,6 +51,9 @@ function initAutoFillAndTimer() {
   });
 }
 
+// ==========================================
+// MESIN AUTOFILL MICROSOFT FORMS
+// ==========================================
 function executeAutofill(rules) {
   const questionBlocks = document.querySelectorAll('[data-automation-id="questionItem"]');
 
@@ -78,6 +84,7 @@ function executeAutofill(rules) {
   });
 }
 
+// Handler Tipe Teks (Nama & NIM)
 function fillTextInput(block, value) {
   const inputEl = block.querySelector('input[data-automation-id="textInput"], textarea');
   if (inputEl) {
@@ -98,6 +105,7 @@ function fillTextInput(block, value) {
   }
 }
 
+// Handler Tipe Pilihan Ganda / Checkbox
 function fillChoiceInput(block, targetValue) {
   const options = block.querySelectorAll('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]');
   
@@ -113,7 +121,7 @@ function fillChoiceInput(block, targetValue) {
   });
 }
 
-// Handler Tanggal: Mengubah format YYYY-MM-DD menjadi MM/DD/YYYY persis seperti MS Forms
+// Handler Tipe Tanggal (Disesuaikan agar tembus proteksi React/Office UI Fabric MS Forms)
 function fillDateInput(block, value) {
   let dateVal = value;
   
@@ -122,13 +130,12 @@ function fillDateInput(block, value) {
     const dd = String(today.getDate());
     const mm = String(today.getMonth() + 1);
     const yyyy = today.getFullYear();
-    dateVal = `${mm}/${dd}/${yyyy}`; // Format M/d/yyyy tanpa leading zero jika mau aman, atau dengan padStart
+    dateVal = `${mm}/${dd}/${yyyy}`;
   } else if (dateVal.includes('-')) {
-    // Ubah dari YYYY-MM-DD (bawaan HTML date picker) ke M/d/yyyy (Microsoft Forms)
     const parts = dateVal.split('-');
     if (parts.length === 3) {
       const yyyy = parts[0];
-      const mm = parseInt(parts[1], 10); // Menghilangkan leading zero (misal "10" tetap "10", "05" jadi "5" jika perlu, atau biarkan standar)
+      const mm = parseInt(parts[1], 10);
       const dd = parseInt(parts[2], 10);
       dateVal = `${mm}/${dd}/${yyyy}`;
     }
@@ -137,6 +144,10 @@ function fillDateInput(block, value) {
   const dateInput = block.querySelector('[data-automation-id="dateContainer"] input, input[role="combobox"]');
   
   if (dateInput) {
+    // Fokuskan elemen terlebih dahulu agar state picker aktif
+    dateInput.focus();
+    dateInput.click();
+
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
     if (nativeInputValueSetter) {
       nativeInputValueSetter.call(dateInput, dateVal);
@@ -144,12 +155,18 @@ function fillDateInput(block, value) {
       dateInput.value = dateVal;
     }
 
+    // Memicu serangkaian event DOM & React agar form mendeteksi perubahan nilai
+    dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
     dateInput.dispatchEvent(new Event('input', { bubbles: true }));
     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+    dateInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
     dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
   }
 }
 
+// ==========================================
+// FLOATING TIMER & AUTO-SUBMIT
+// ==========================================
 function createFloatingTimer(targetEndTime, taskName) {
   if (document.getElementById('autoSubmitTimerBox')) return;
 
@@ -204,17 +221,18 @@ function createFloatingTimer(targetEndTime, taskName) {
       String(seconds).padStart(2, '0');
   }, 1000);
 
+  // Tombol STOP: Membersihkan timer sekaligus menghapus data alarm dari storage secara tuntas
   document.getElementById('stopTimerBtn').addEventListener('click', () => {
     clearInterval(interval);
     timerBox.remove();
     
-    // Kirim pesan ke background untuk menghapus data tugas & alarm secara tuntas
     if (taskName) {
       chrome.runtime.sendMessage({ action: "cleanupTask", taskName: taskName }, (response) => {
         console.log("Task stopped and cleaned up:", response);
       });
     }
   });
+}
 
 function triggerSubmit(taskName) {
   let submitBtn = document.querySelector('button[data-automation-id="submitButton"]');
